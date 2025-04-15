@@ -1,0 +1,289 @@
+body {
+    font-family: sans-serif;
+    padding: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1, h2 {
+    color: #5a5a5a;
+    text-align: center;
+}
+
+#camera-container {
+    margin-bottom: 20px;
+    text-align: center;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#video {
+    display: block; /* 讓按鈕顯示在下方 */
+    margin: 0 auto 10px auto; /* 置中並添加下方間距 */
+    width: 100%;
+    max-width: 400px; /* 限制最大寬度 */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#capture-btn {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+}
+
+#capture-btn:hover {
+    background-color: #0056b3;
+}
+
+#results {
+    margin-top: 20px;
+    width: 100%;
+    max-width: 600px; /* 限制結果區域寬度 */
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#results h2 {
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+#ingredients, #recipes {
+    min-height: 50px; /* 最小高度以防內容為空 */
+    padding: 10px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    white-space: pre-wrap; /* 保留換行符 */
+}
+
+.error {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 15px;
+    text-align: center;
+    display: none; /* 預設隱藏 */
+}
+
+/* 新增 API Key 輸入區塊的樣式 */
+#api-key-section {
+    background-color: #fff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 600px; /* 限制寬度 */
+    text-align: center; /* 讓內容置中 */
+}
+
+#api-key-section label {
+    display: block; /* 讓 label 獨佔一行 */
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
+}
+
+#api-key-input {
+    width: 80%; /* 相對寬度 */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+}
+
+.api-key-instructions {
+    font-size: 0.85em;
+    color: #666;
+    line-height: 1.4;
+    margin-top: 5px; /* 調整與輸入框的間距 */
+}
+
+.api-key-instructions a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.api-key-instructions a:hover {
+    text-decoration: underline;
+}
+
+/* 新增：選項容器的樣式 */
+#input-options {
+    display: flex; /* 並排顯示相機和上傳區 */
+    justify-content: space-around; /* 平均分配空間 */
+    align-items: flex-start; /* 頂部對齊 */
+    width: 100%;
+    max-width: 800px; /* 調整寬度以容納兩個區塊 */
+    margin-bottom: 20px;
+    gap: 20px; /* 區塊之間的間距 */
+}
+
+/* 調整：相機和上傳容器的樣式 */
+#camera-container, #upload-container {
+    flex: 1; /* 讓兩個區塊平分空間 */
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+    min-width: 300px; /* 最小寬度 */
+}
+
+#camera-container h3, #upload-container h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #5a5a5a;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+/* 調整 video 樣式 */
+#video {
+    /* 繼承 #camera-container 的寬度和最大寬度 */
+    margin-bottom: 10px;
+}
+
+/* 新增：檔案上傳按鈕樣式 */
+.file-label {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #28a745; /* 綠色 */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+    margin-bottom: 15px;
+}
+
+.file-label:hover {
+    background-color: #218838;
+}
+
+/* 新增：圖片預覽區樣式 */
+#image-previews {
+    display: flex;
+    flex-wrap: wrap; /* 圖片換行 */
+    gap: 10px; /* 預覽圖間距 */
+    justify-content: center; /* 預覽圖置中 */
+    margin-bottom: 15px;
+    min-height: 80px; /* 增加最小高度以容納按鈕 */
+    border: 1px dashed #ccc; /* 虛線框 */
+    padding: 10px;
+    border-radius: 4px;
+}
+
+#image-previews img {
+    max-width: 80px; /* 限制預覽圖大小 */
+    max-height: 80px;
+    border-radius: 4px;
+    object-fit: cover; /* 保持比例並裁剪 */
+}
+
+/* 新增：清除按鈕樣式 */
+#clear-files-btn {
+    padding: 8px 15px;
+    background-color: #ffc107; /* 黃色 */
+    color: #333;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease;
+    margin-top: 10px; /* 與預覽區的間距 */
+}
+
+#clear-files-btn:hover {
+    background-color: #e0a800;
+}
+
+/* 調整：主要處理按鈕樣式 */
+#process-btn {
+    padding: 12px 25px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: background-color 0.3s ease;
+    margin-top: 10px; /* 與上方選項區的間距 */
+}
+
+#process-btn:hover {
+    background-color: #0056b3;
+}
+
+/* 新增：提示文字樣式 */
+.info-text {
+    font-size: 0.9em;
+    color: #6c757d;
+    margin-top: 10px;
+}
+
+/* 新增：相機控制按鈕容器 */
+.camera-controls {
+    margin-top: 10px; /* 與 video 的間距 */
+    margin-bottom: 10px;
+    display: flex; /* 並排顯示按鈕 */
+    justify-content: center; /* 置中 */
+    gap: 10px; /* 按鈕間距 */
+}
+
+/* 新增：相機拍照按鈕樣式 */
+#capture-shot-btn {
+    padding: 8px 15px;
+    background-color: #17a2b8; /* 青色 */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease;
+}
+
+#capture-shot-btn:hover:not([disabled]) {
+    background-color: #138496;
+}
+
+#capture-shot-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* 新增：清除相機照片按鈕樣式 (與清除上傳按鈕類似) */
+#clear-shots-btn {
+    padding: 8px 15px;
+    background-color: #ffc107; /* 黃色 */
+    color: #333;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease;
+}
+
+#clear-shots-btn:hover {
+    background-color: #e0a800;
+} 

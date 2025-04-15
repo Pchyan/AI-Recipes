@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 食材識別與菜單建議</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>AI 食材識別與菜單建議</h1>
+
+    <div id="api-key-section">
+        <label for="api-key-input">您的 Google Gemini API 金鑰：</label>
+        <input type="password" id="api-key-input" placeholder="在此貼上您的 API 金鑰">
+        <p class="api-key-instructions">
+            請在此輸入您的 Google Gemini API 金鑰。
+            您可以從 <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> 取得。
+            <br><strong>提醒：</strong> 請勿在不安全的環境中分享您的金鑰。
+        </p>
+    </div>
+
+    <div id="input-options">
+        <div id="camera-container">
+            <h3>選項一：使用相機</h3>
+            <video id="video" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button id="capture-shot-btn" disabled>拍攝照片</button>
+                <button id="clear-shots-btn" style="display: none;">清除相機照片</button>
+            </div>
+            <p class="info-text">將食材放在鏡頭前，可拍攝多張</p>
+        </div>
+
+        <div id="upload-container">
+            <h3>選項二：上傳圖片</h3>
+            <label for="file-input" class="file-label">選擇圖片檔案...</label>
+            <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
+            <div id="image-previews"></div>
+            <button id="clear-files-btn" style="display: none;">清除上傳</button>
+            <p class="info-text">可選擇多張圖片</p>
+        </div>
+    </div>
+
+    <button id="process-btn">開始識別與建議</button>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <div id="results">
+        <h2>識別結果：</h2>
+        <div id="ingredients">請先拍攝食材照片...</div>
+
+        <h2>建議菜單：</h2>
+        <div id="recipes">等待識別食材...</div>
+    </div>
+
+    <div id="error-message" class="error"></div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
