@@ -29,6 +29,10 @@ const clearShotsBtn = document.getElementById('clear-shots-btn');
 // --- 新增：localStorage 的 Key 名稱 ---
 const LOCAL_STORAGE_API_KEY = 'geminiApiKey';
 
+// --- 新增：手動輸入元素獲取 ---
+const manualIngredientsInput = document.getElementById('manual-ingredients-input');
+const suggestRecipesManualBtn = document.getElementById('suggest-recipes-manual-btn');
+
 // --- 新增：頁面載入時讀取 localStorage ---
 function loadApiKeyFromLocalStorage() {
     const savedKey = localStorage.getItem(LOCAL_STORAGE_API_KEY);
@@ -67,18 +71,33 @@ async function startCamera() {
     }
 }
 
-// 顯示錯誤訊息
+// 顯示載入狀態
+function showLoading(isProcessing) {
+    if (isProcessing) {
+        loadingIndicator.style.display = 'flex';
+        resultsSection.style.display = 'none'; // 隱藏舊結果
+        errorMessageDiv.style.display = 'none'; // 隱藏舊錯誤
+    } else {
+        loadingIndicator.style.display = 'none';
+    }
+}
+
+// 顯示結果 (成功時調用)
+function showResults() {
+    resultsSection.style.display = 'block';
+    loadingIndicator.style.display = 'none';
+    errorMessageDiv.style.display = 'none';
+}
+
+// 顯示錯誤訊息 (覆蓋之前的，確保顯示)
 function showError(message) {
     errorMessageDiv.textContent = message;
     errorMessageDiv.style.display = 'block';
-    ingredientsDiv.textContent = '操作出錯';
-    recipesDiv.textContent = '操作出錯';
-}
-
-// 隱藏錯誤訊息
-function clearError() {
-    errorMessageDiv.textContent = '';
-    errorMessageDiv.style.display = 'none';
+    resultsSection.style.display = 'none'; // 出錯時也隱藏結果區
+    loadingIndicator.style.display = 'none'; // 隱藏載入
+    // 保持舊的結果區文本清空邏輯 (可選)
+    // ingredientsDiv.textContent = '操作出錯';
+    // recipesDiv.textContent = '操作出錯';
 }
 
 // --- 檔案處理 --- 
@@ -168,40 +187,33 @@ clearShotsBtn.addEventListener('click', () => {
     updateImagePreviews(); // 更新預覽
 });
 
-// --- 主要處理邏輯 (修改圖片收集方式) --- 
+// --- 主要處理邏輯 (圖片識別) ---
 processBtn.addEventListener('click', async () => {
-    clearError();
-    ingredientsDiv.textContent = '準備處理圖片...';
-    recipesDiv.textContent = '等待圖片處理...';
+    clearError(); // 這裡僅清除錯誤訊息狀態，不影響顯示
+    showLoading(true); // 顯示載入
 
-    // 1. 檢查 API 金鑰
-    const apiKey = apiKeyInput.value.trim();
+    // 延遲一小段時間讓 UI 更新 (可選)
+    await new Promise(resolve => setTimeout(resolve, 50)); 
+
+    const apiKey = localStorage.getItem(LOCAL_STORAGE_API_KEY);
     if (!apiKey) {
         showError('請先在上方欄位輸入您的 Google Gemini API 金鑰。');
         return;
     }
 
-    // --- 新增：儲存 API 金鑰到 localStorage ---
-    // 警告：localStorage 不適合儲存非常敏感的資料於生產環境
-    // 但對於本機開發或個人工具來說相對方便
     localStorage.setItem(LOCAL_STORAGE_API_KEY, apiKey);
     console.log("API 金鑰已儲存到 localStorage。");
 
     let imageBase64List = [];
 
-    // 2. 收集相機拍攝的照片 (從 cameraShotsBase64 陣列)
     if (cameraShotsBase64.length > 0) {
         imageBase64List = imageBase64List.concat(cameraShotsBase64);
         console.log(`已收集 ${cameraShotsBase64.length} 張相機照片。`);
     }
 
-    // 3. 收集上傳的圖片 (與之前相同，但讀取移到 fileInput change 事件中)
     if (uploadedFiles.length > 0) {
         ingredientsDiv.textContent = `正在處理 ${uploadedFiles.length} 張上傳圖片...`; // 更新提示
         try {
-            // 確保 Base64 數據已經準備好 (實際上已在 change 事件中讀取預覽，這裡直接用)
-            // 為了與之前的邏輯保持一致，可以重新讀取，或者直接使用預覽的 src (需要修改)
-            // 為了簡單起見，我們假設 readFileAsBase64 仍然需要被調用
             const uploadedImagesBase64 = await Promise.all(uploadedFiles.map(readFileAsBase64));
             imageBase64List = imageBase64List.concat(uploadedImagesBase64);
             console.log(`已收集 ${uploadedFiles.length} 張上傳圖片。`);
@@ -212,7 +224,6 @@ processBtn.addEventListener('click', async () => {
         }
     }
 
-    // 4. 檢查是否有任何圖片
     if (imageBase64List.length === 0) {
         showError('請先使用相機拍攝或上傳至少一張食材圖片。');
         return;
@@ -221,7 +232,6 @@ processBtn.addEventListener('click', async () => {
     ingredientsDiv.textContent = `正在識別 ${imageBase64List.length} 張圖片中的食材...`;
     recipesDiv.textContent = '等待識別結果...';
 
-    // 5. 呼叫 Gemini API 識別食材
     try {
         const promptText = `請辨識以下 ${imageBase64List.length} 張圖片中的所有食材，匯總後用繁體中文列出，並以逗號分隔。`;
         const identifiedIngredientsText = await callGeminiAPI(apiKey, imageBase64List, promptText);
@@ -230,13 +240,9 @@ processBtn.addEventListener('click', async () => {
             showError(`無法獲取有效的食材辨識結果：${identifiedIngredientsText}`);
             return;
         }
+        ingredientsDiv.textContent = identifiedIngredientsText;
 
-        ingredientsDiv.textContent = `識別出的食材： ${identifiedIngredientsText}`; 
-
-        // 6. 根據食材建議菜單
-        recipesDiv.textContent = '正在生成建議菜單...';
         const recipePrompt = `這是我目前有的食材：${identifiedIngredientsText}。請根據這些食材，建議 3 道簡單的繁體中文家庭菜單，包含菜名和主要步驟。`;
-        // 第二次呼叫，僅使用文字，不再傳遞圖片
         const suggestedRecipesText = await callGeminiAPI(apiKey, null, recipePrompt);
 
         if (!suggestedRecipesText || suggestedRecipesText.startsWith('請求被阻擋') || suggestedRecipesText.startsWith('API 回應格式不符')) {
@@ -245,9 +251,56 @@ processBtn.addEventListener('click', async () => {
         }
         recipesDiv.textContent = suggestedRecipesText;
 
+        showResults(); // 成功，顯示結果區
+
     } catch (error) {
-        console.error("API 呼叫失敗:", error);
-        showError(`API 呼叫失敗：${error.message}。請檢查您的 API 金鑰和網路連線。`);
+        console.error("圖片識別 API 呼叫失敗:", error);
+        showError(`圖片識別 API 呼叫失敗：${error.message}`);
+    } finally {
+        // 無論成功或失敗，確保 loading 隱藏 (雖然 showResults/showError 已處理，但 finally 更保險)
+        // showLoading(false); 
+    }
+});
+
+// --- 新增：處理手動輸入食材建議的函數 ---
+suggestRecipesManualBtn.addEventListener('click', async () => {
+    clearError();
+    showLoading(true); // 顯示載入
+
+    await new Promise(resolve => setTimeout(resolve, 50)); 
+
+    const apiKey = localStorage.getItem(LOCAL_STORAGE_API_KEY);
+    if (!apiKey) {
+        showError('請先在上方欄位輸入您的 Google Gemini API 金鑰。');
+        return;
+    }
+    localStorage.setItem(LOCAL_STORAGE_API_KEY, apiKey);
+
+    const manualIngredients = manualIngredientsInput.value.trim();
+    if (!manualIngredients) {
+        showError('請在文字框中輸入您擁有的食材。');
+        return;
+    }
+
+    ingredientsDiv.textContent = manualIngredients; // 直接顯示輸入的內容
+    recipesDiv.textContent = '正在生成建議菜單...';
+
+    try {
+        const recipePrompt = `這是我目前有的食材：${manualIngredients}。請根據這些食材，建議 3 道簡單的繁體中文家庭菜單，包含菜名和主要步驟。`;
+        const suggestedRecipesText = await callGeminiAPI(apiKey, null, recipePrompt);
+
+        if (!suggestedRecipesText || suggestedRecipesText.startsWith('請求被阻擋') || suggestedRecipesText.startsWith('API 回應格式不符')) {
+            showError(`無法獲取有效的菜單建議結果：${suggestedRecipesText}`);
+            return;
+        }
+        recipesDiv.textContent = suggestedRecipesText;
+        showResults(); // 成功，顯示結果區
+
+    } catch (error) {
+        console.error("手動建議 API 呼叫失敗:", error);
+        showError(`手動建議 API 呼叫失敗：${error.message}`);
+    } finally {
+        // showLoading(false);
     }
 });
 
@@ -339,4 +392,80 @@ window.addEventListener('load', () => {
     if (captureShotBtn) captureShotBtn.disabled = true; // 預設禁用，等待相機啟動
     startCamera();
     loadApiKeyFromLocalStorage();
+});
+
+// Toast 通知
+function showToast(message, type = 'primary') {
+  const toastEl = document.getElementById('toast');
+  const toastBody = document.getElementById('toast-body');
+  toastBody.innerHTML = message;
+  toastEl.className = `toast align-items-center text-bg-${type} border-0`;
+  const toast = new bootstrap.Toast(toastEl);
+  toast.show();
+}
+
+// 複製 API Key
+const copyApiKeyBtn = document.getElementById('copy-api-key-btn');
+if (copyApiKeyBtn) {
+  copyApiKeyBtn.addEventListener('click', () => {
+    const apiKeyInput = document.getElementById('api-key-input');
+    if (apiKeyInput.value) {
+      navigator.clipboard.writeText(apiKeyInput.value);
+      showToast('API 金鑰已複製', 'success');
+    } else {
+      showToast('沒有可複製的 API 金鑰', 'warning');
+    }
+  });
+}
+
+// 主題切換
+const themeToggleBtn = document.getElementById('theme-toggle-btn');
+themeToggleBtn.addEventListener('click', () => {
+  const html = document.body;
+  const isDark = html.getAttribute('data-bs-theme') === 'dark';
+  html.setAttribute('data-bs-theme', isDark ? 'light' : 'dark');
+  themeToggleBtn.innerHTML = isDark
+    ? '<i class="bi bi-moon-stars-fill"></i>'
+    : '<i class="bi bi-brightness-high-fill"></i>';
+  showToast(isDark ? '切換為淺色主題' : '切換為深色主題', 'info');
+});
+// 載入時自動根據系統主題
+window.addEventListener('DOMContentLoaded', () => {
+  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    document.body.setAttribute('data-bs-theme', 'dark');
+    themeToggleBtn.innerHTML = '<i class="bi bi-brightness-high-fill"></i>';
+  }
+});
+
+// 顯示 loading
+function showLoading(isLoading) {
+  document.getElementById('loading-indicator').classList.toggle('d-none', !isLoading);
+}
+// 顯示結果
+function showResults() {
+  document.getElementById('results').classList.remove('d-none');
+  document.getElementById('loading-indicator').classList.add('d-none');
+  document.getElementById('error-message').classList.add('d-none');
+  // 觸發動畫
+  document.getElementById('results').classList.add('animate__fadeInUp');
+}
+// 顯示錯誤
+function showError(msg) {
+  const err = document.getElementById('error-message');
+  err.textContent = msg;
+  err.classList.remove('d-none');
+  document.getElementById('results').classList.add('d-none');
+  document.getElementById('loading-indicator').classList.add('d-none');
+  showToast(msg, 'danger');
+}
+
+// 頁面載入時檢查金鑰
+window.addEventListener('DOMContentLoaded', () => {
+  const LOCAL_STORAGE_API_KEY = 'geminiApiKey';
+  const apiKey = localStorage.getItem(LOCAL_STORAGE_API_KEY);
+  if (!apiKey) {
+    window.location.href = 'apikey.html';
+    return;
+  }
+  // ...其餘初始化...
 }); 
